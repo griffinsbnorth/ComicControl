@@ -1,4 +1,5 @@
 <?php
+error_reporting(E_ALL ^ E_WARNING);
 
 //import db and initialize
 require_once('../includes/dbconfig.php');
