@@ -77,7 +77,7 @@ function buildFormInput($options){
 	}else if($type=="editor"){
 		buildTextEditor($name);
 	}else if($type=="select"){
-		echo '<select name="' . $name . '">';
+		echo '<select name="' . $name . '" id="' . $name . '">';
 		foreach($options as $key => $value){
 			echo '<option value="' . $key . '"';
 			if($key == htmlspecialchars($current)) echo ' SELECTED';
@@ -178,6 +178,42 @@ function buildImageInput($buttontext,$validate,$tooltip = ""){
 	</div>
 	<div class="filenameholder"></div>
 	</div>';
+}
+
+//more generic output image input for in-page image uploading
+function buildCustomFileInput($buttontext,$validate,$tooltip = "",$type = ""){
+	//make container
+	echo '<div class="customfileinputcontainer">';
+	//make label
+	echo '<label for="' . $type .'file" >' . $buttontext;
+	if ($tooltip != "") echo '<div class="tooltip"><a class="f-c">?</a><div class="tooltip-help"><div class="tooltip-triangle"></div>' . $tooltip . '</div></div>';
+	echo '</label>';
+	//make input button for file
+	echo '</label><input type="file" id="'. $type . 'file" name="' . $type . 'file" ';
+	if($validate) echo ' data-validate="custom-file-upload"';
+	echo ' />';
+	//progress bar
+	echo '<div class="percent"></div>';
+	//make container for output
+	echo '<div class="filenameholder"></div></div>';
+}
+
+//thumbnail image uploading
+function buildThumbnailFileInput($validate,$tooltip = ""){
+	//make container
+	echo '<div class="thumbfileinputcontainer">';
+	//make label
+	echo '<label for="thumbfile" >Thumbnail';
+	if ($tooltip != "") echo '<div class="tooltip"><a class="f-c">?</a><div class="tooltip-help"><div class="tooltip-triangle"></div>' . $tooltip . '</div></div>';
+	echo '</label>';
+	//make input button for file
+	echo '</label><input type="file" id="thumbfile" name="thumbfile" ';
+	if($validate) echo ' data-validate="thumb-file-upload"';
+	echo ' />';
+	//progress bar
+	echo '<div class="percent"></div>';
+	//make container for output
+	echo '<div class="filenameholder"></div></div>';
 }
 
 ?>

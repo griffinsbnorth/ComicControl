@@ -61,8 +61,21 @@ $("#submitform").on('click', function(){
 						error = true;
 					}
 					break;
-					
-			}
+				case 'custom-file-upload':
+					var $forminput = $(this).closest('.customfileinputcontainer');
+					if(!($(this).closest('.customfileinputcontainer').find('.finalfile').val())){
+						showError($forminput,'<?=$lang['error-file']?>');
+						error = true;
+					}
+					break;
+				case 'thumb-file-upload':
+					var $forminput = $(this).closest('.thumbfileinputcontainer');
+					if(!($(this).closest('.thumbfileinputcontainer').find('.finalfile').val())){
+						showError($forminput,'<?=$lang['error-file']?>');
+						error = true;
+					}
+					break;		
+				}
 		}
 		
 	});
