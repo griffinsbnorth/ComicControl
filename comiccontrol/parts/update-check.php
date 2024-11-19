@@ -29,7 +29,7 @@ if($currentversion==$version){
 
 //otherwise, download upgrade scripts and give options for updating
 else{
-	
+	/*
 	$query = "UPDATE cc_" . $tableprefix . "options SET optionvalue=:version WHERE optionname=:option";
 	$stmt = $cc->prepare($query);
 	$stmt->execute(['version' =>$version,'option'=>'newestversion']);
@@ -45,7 +45,7 @@ else{
 		$ccurl . "upgrade",
 		$lang['Upgrade ComicControl']
 	);
-	echo '</div>';
+	echo '</div>';*/
 }
 }
 ?>
