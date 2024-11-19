@@ -90,6 +90,7 @@ $lang['Publish date'] = "Publish date";
 $lang['Publish time'] = "Publish time";
 $lang['News title'] = "News title";
 $lang['Storyline'] = "Storyline";
+$lang['Is animated'] = "Is Animated";
 $lang['News content'] = "News content";
 $lang['Comic transcript'] = "Comic transcript";
 $lang['Submit comic post'] = "Submit comic post";
@@ -223,6 +224,7 @@ $lang['tooltip-storyline'] = 'This is the chapter that your comic page will be l
 $lang['tooltip-transcript'] = "You may enter a transcript of your comic page here.  It will be displayed with your news post.";
 $lang['tooltip-storylinetitle'] = "This will be the name of the storyline.  The storyline name must have at least one number or letter character.";
 $lang['tooltip-parentstoryline'] = "This will be the parent storyline of the created storyline.  If a parent storyline is selected, this storyline will be a sub-storyline of the parent storyline.  For example, a chapter can be created with a volume as a parent storyline.";
+$lang['tooltip-isanimated'] = "Is this page meant to be animated? If so, the extra pages will be used as overlays";
 
 //page option tooltips
 $lang['tooltip-pagetitle'] = "This is the title that will be associated with this module.  It will be displayed in the tab or window title when the user navigates to this module.";

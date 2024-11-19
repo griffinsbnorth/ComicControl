@@ -42,8 +42,8 @@ if(isset($_POST) && $_POST['comic-title'] != ""){
 	
 	//set values for the query 
 	$comic = $ccpage->module->id;
-	$comichighres = $_POST['image-highres'];
-	$comicthumb = $_POST['image-thumbnail'];
+	$comicstatic = $_POST['image-static'];
+	$comicthumb = $_POST['image-thumbfile'];
 	$imgname = $_POST['image-finalfile'];
 	$timestring = $_POST['comic-date'] . ' ' . sprintf('%02d',$_POST['hour']) . ':' . sprintf('%02d',$_POST['minute']) . ':' . sprintf('%02d',$_POST['second']);
 	$publishtime = strtotime($timestring);
@@ -53,12 +53,30 @@ if(isset($_POST) && $_POST['comic-title'] != ""){
 	$transcript = $_POST['comic-transcript'];
 	$storyline = $_POST['comic-storyline'];
 	$hovertext = $_POST['comic-hovertext'];
-	$imginfo = getimagesize('../comicshighres/' . $comichighres);
+	$imginfo = getimagesize('../comics/' . $imgname);
 	$width = $imginfo[0];
 	$height = $imginfo[1];
 	$mime = $imginfo['mime'];
 	$contentwarning = $_POST['comic-content-warning'];
 	$altnext = $_POST['comic-alternative-link'];
+	$isanimated = 0;
+
+	//Extra pages
+	$extra1 = $_POST['image-extra1file'];
+	$extraimginfo = getimagesize('../comicsextra/' . $extra1);
+	$extra1mime = $extraimginfo['mime'];
+	$extra2 = $_POST['image-extra2file'];
+	$extraimginfo = getimagesize('../comicsextra/' . $extra2);
+	$extra2mime = $extraimginfo['mime'];
+	$extra3 = $_POST['image-extra3file'];
+	$extraimginfo = getimagesize('../comicsextra/' . $extra3);
+	$extra3mime = $extraimginfo['mime'];
+
+
+	if(strcmp($_POST['isanimated'],'on') == 0) {
+		$isanimated = 1;
+		$comicstatic = $_POST['image-staticfile'];
+	}
 	
 	//find available slug
 	$slug = toSlug($title);
@@ -76,9 +94,9 @@ if(isset($_POST) && $_POST['comic-title'] != ""){
 	}
 	
 	//execute query
-	$query = "INSERT INTO cc_" . $tableprefix . "comics(comic,comichighres,comicthumb,imgname,publishtime,title,newstitle,newscontent,transcript,storyline,hovertext,slug,width,height,mime,contentwarning,altnext) VALUES(:comic,:comichighres,:comicthumb,:imgname,:publishtime,:title,:newstitle,:newscontent,:transcript,:storyline,:hovertext,:slug,:width,:height,:mime,:contentwarning,:altnext)";
+	$query = "INSERT INTO cc_" . $tableprefix . "comics(comic,comicstatic,comicthumb,imgname,publishtime,title,newstitle,newscontent,transcript,storyline,hovertext,slug,width,height,mime,contentwarning,altnext,isanimated) VALUES(:comic,:comicstatic,:comicthumb,:imgname,:publishtime,:title,:newstitle,:newscontent,:transcript,:storyline,:hovertext,:slug,:width,:height,:mime,:contentwarning,:altnext,:isanimated)";
 	$stmt = $cc->prepare($query);
-	$stmt->execute(['comic' => $comic, 'comichighres' => $comichighres, 'comicthumb' => $comicthumb, 'imgname' => $imgname, 'publishtime' => $publishtime, 'title' => $title, 'newstitle' => $newstitle, 'newscontent' => $newscontent, 'transcript' => $transcript, 'storyline' => $storyline, 'hovertext' => $hovertext, 'slug' => $slugfinal, 'width' => $width, 'height' => $height, 'mime' => $mime, 'contentwarning' => $contentwarning, 'altnext' => $altnext]);
+	$stmt->execute(['comic' => $comic, 'comicstatic' => $comicstatic, 'comicthumb' => $comicthumb, 'imgname' => $imgname, 'publishtime' => $publishtime, 'title' => $title, 'newstitle' => $newstitle, 'newscontent' => $newscontent, 'transcript' => $transcript, 'storyline' => $storyline, 'hovertext' => $hovertext, 'slug' => $slugfinal, 'width' => $width, 'height' => $height, 'mime' => $mime, 'contentwarning' => $contentwarning, 'altnext' => $altnext, 'isanimated' => $isanimated]);
 	
 	//continue if post successfully added
 	if($stmt->rowCount() > 0){
@@ -100,6 +118,23 @@ if(isset($_POST) && $_POST['comic-title'] != ""){
 			if($tag != ""){
 				$stmt->execute(['moduleid' => $comic, 'postid' => $postid, 'tag' => $tag, 'publishtime' => $publishtime]);
 			}
+		}
+
+		//add the extra pages if needed
+		if ($extra1 != "") {
+			$eorder = 1;
+			$stmt = $cc->prepare("INSERT INTO cc_" . $tableprefix . "comics_extra(comic,comicid,imgname,mime,eorder) VALUES(:moduleid,:postid,:extra,:extramime,:eorder)");
+			$stmt->execute(['moduleid' => $comic, 'postid' => $postid, 'extra' => $extra1, 'extramime' => $extra1mime, 'eorder' => $eorder]);
+				if ($extra2 != "") {
+					$eorder = 2;
+					$stmt = $cc->prepare("INSERT INTO cc_" . $tableprefix . "comics_extra(comic,comicid,imgname,mime,eorder) VALUES(:moduleid,:postid,:extra,:extramime,:eorder)");
+					$stmt->execute(['moduleid' => $comic, 'postid' => $postid, 'extra' => $extra2, 'extramime' => $extra2mime, 'eorder' => $eorder]);
+							if ($extra3 != "") {
+								$eorder = 3;
+								$stmt = $cc->prepare("INSERT INTO cc_" . $tableprefix . "comics_extra(comic,comicid,imgname,mime,eorder) VALUES(:moduleid,:postid,:extra,:extramime,:eorder)");
+								$stmt->execute(['moduleid' => $comic, 'postid' => $postid, 'extra' => $extra3, 'extramime' => $extra3mime, 'eorder' => $eorder]);
+							}
+				}
 		}
 		
 		//give success message
@@ -214,6 +249,18 @@ if(isset($_POST) && $_POST['comic-title'] != ""){
 							'regex' => "storyline",
 							'current' => $storyline
 						)
+					),array(
+						array(
+							'type' => "select",
+							'label' => $lang['Is animated'],
+							'tooltip' => $lang['tooltip-isanimated'],
+							'name' => 'isanimated',
+							'options' => array(
+								'off' => $lang['No'],
+								'on' => $lang['Yes'],
+							),
+							'current' => 'off'
+						)
 					)
 				);
 				if(getModuleOption('contentwarnings') == "on") array_push($forminputs,
@@ -232,7 +279,12 @@ if(isset($_POST) && $_POST['comic-title'] != ""){
 				buildForm($forminputs); 
 			?>
 		</div>
-		
+		<?php buildThumbnailFileInput(true); ?>
+		<?php buildCustomFileInput("Static Image (for animated pages)",false,"","static"); ?>
+		<?php buildCustomFileInput("Extra Comic Page/Overlay 1",false,"","extra1"); ?>
+		<?php buildCustomFileInput("Extra Comic Page/Overlay 2",false,"","extra2"); ?>
+		<?php buildCustomFileInput("Extra Comic Page/Overlay 3",false,"","extra3"); ?>
+
 		<?php //build the news post form ?>
 		<h2 class="formheader">News post</h2>
 		<div class="formcontain">
@@ -279,6 +331,13 @@ if(isset($_POST) && $_POST['comic-title'] != ""){
 		container.append($errordiv);
 		$errordiv.slideDown();
 	}
+	$('#isanimated').on('change',function() {
+		if($(this).val() == 'on') {
+			$('#staticfile').attr('data-validate', 'custom-file-upload');
+		} else {
+			$('#staticfile').removeAttr('data-validate');
+		}
+	});
 	</script>
 	<?php 
 	//include relevant javascript
@@ -286,6 +345,7 @@ if(isset($_POST) && $_POST['comic-title'] != ""){
 	include('includes/form-submit-js.php');
 	include('includes/img-upload-js.php');
 	include('includes/content-editor-js.php');
+	include('includes/img-custom-upload-js.php');
 }
 }
 ?>
