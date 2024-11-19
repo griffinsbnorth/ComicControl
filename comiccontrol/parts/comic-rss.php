@@ -4,9 +4,13 @@ header("Content-Type: application/xml; charset=UTF-8");
 
 //some cleanup functions
 function selfURL() {
-	$s = empty($_SERVER["HTTPS"]) ? ''
-		: ($_SERVER["HTTPS"] == "on") ? "s"
-		: "";
+	$s = "";
+	if (empty($_SERVER["HTTPS"])) {
+			$s = '';
+	} else if ($_SERVER["HTTPS"] == "on") {
+			$s = "s";
+	}
+
 	$protocol = strleft(strtolower($_SERVER["SERVER_PROTOCOL"]), "/").$s;
 	return $protocol."://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 }
@@ -31,35 +35,37 @@ $recent = $stmt->fetchAll();
 foreach($recent as $row){
 	$str .= '<item><title><![CDATA[' . $ccpage->title . ' - ' . html_entity_decode($row['title'],ENT_QUOTES) . ']]></title>';
 	$desc_data = $row['newscontent'];
-	$desc_data = preg_replace("#(<\s*a\s+[^>]*href\s*=\s*[\"'])(?!http)([^\"'>]+)([\"'>]+)#", '<a href="' . $ccsite->root . '$2$3', $desc_data);
-	$desc_data = preg_replace("<html>", '', $desc_data);
-	$desc_data = preg_replace("<body>", '', $desc_data);
-	$desc_data = preg_replace("</html>", '', $desc_data);
-	$desc_data = preg_replace("</body>", '', $desc_data);
-	$dom = new DOMDocument();
-	@$dom->loadHTML($desc_data);
+	if (!empty($desc_data)) {
+		$desc_data = preg_replace("#(<\s*a\s+[^>]*href\s*=\s*[\"'])(?!http)([^\"'>]+)([\"'>]+)#", '<a href="' . $ccsite->root . '$2$3', $desc_data);
+		$desc_data = preg_replace("<html>", '', $desc_data);
+		$desc_data = preg_replace("<body>", '', $desc_data);
+		$desc_data = preg_replace("</html>", '', $desc_data);
+		$desc_data = preg_replace("</body>", '', $desc_data);
+		$dom = new DOMDocument();
+		@$dom->loadHTML($desc_data);
 	
-	for ($i=0; $i<$dom->getElementsByTagName('img')->length; $i++) {
-		$encoded = implode("/", array_map("rawurlencode",
-			 explode("/", $dom->getElementsByTagName('img')
-						->item($i)->getAttribute('src'))));
+		for ($i=0; $i<$dom->getElementsByTagName('img')->length; $i++) {
+			$encoded = implode("/", array_map("rawurlencode",
+				 explode("/", $dom->getElementsByTagName('img')
+							->item($i)->getAttribute('src'))));
 	
-		$dom->getElementsByTagName('img')
-				->item($i)
-				->setAttribute('src',$encoded);
+			$dom->getElementsByTagName('img')
+					->item($i)
+					->setAttribute('src',$encoded);
+		}
+		$desc_data = $dom->saveHTML();
+		$desc_data = str_replace("<html>", '', $desc_data);
+		$desc_data = str_replace("<body>", '', $desc_data);
+		$desc_data = str_replace("</html>", '', $desc_data);
+		$desc_data = str_replace("</body>", '', $desc_data);
+		$desc_data = '<a href="' . $ccsite->root . $ccpage->module->slug . '/' . $row['slug'] . '"><img src="' . $ccsite->root . 'comicsthumbs/' . $row['comicthumb'] . '" /><br />New comic!</a><br />Today\'s News:<br />' . $desc_data;
+		$str .= '<description><![CDATA[' . $desc_data . ']]></description>';
+		$str .= '<link>' . $ccsite->root . $ccpage->module->slug . '/' . $row['slug'] . '</link>';
+		$str .= '<author>tech@thehiveworks.com</author>';
+		$str .= '<pubDate>' . date("D, d M Y H:i:s O", $row['publishtime']) . '</pubDate>';
+		$str .= '<guid>' . $ccsite->root . $ccpage->module->slug . '/' . $row['slug'] . '</guid>';
+		$str .= '</item>';
 	}
-	$desc_data = $dom->saveHTML();
-	$desc_data = str_replace("<html>", '', $desc_data);
-	$desc_data = str_replace("<body>", '', $desc_data);
-	$desc_data = str_replace("</html>", '', $desc_data);
-	$desc_data = str_replace("</body>", '', $desc_data);
-	$desc_data = '<a href="' . $ccsite->root . $ccpage->module->slug . '/' . $row['slug'] . '"><img src="' . $ccsite->root . 'comicsthumbs/' . $row['comicthumb'] . '" /><br />New comic!</a><br />Today\'s News:<br />' . $desc_data;
-	$str .= '<description><![CDATA[' . $desc_data . ']]></description>';
-	$str .= '<link>' . $ccsite->root . $ccpage->module->slug . '/' . $row['slug'] . '</link>';
-	$str .= '<author>tech@thehiveworks.com</author>';
-	$str .= '<pubDate>' . date("D, d M Y H:i:s O", $row['publishtime']) . '</pubDate>';
-	$str .= '<guid>' . $ccsite->root . $ccpage->module->slug . '/' . $row['slug'] . '</guid>';
-	$str .= '</item>';
 }
 $str .= '</channel></rss>';
 echo $str;
