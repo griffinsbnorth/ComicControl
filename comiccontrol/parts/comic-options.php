@@ -25,7 +25,8 @@ if(isset($_POST) && $_POST['page-title'] != ""){
 			$navorder .= $_POST[$navname];
 		}
 	}
-	$stmt->execute(['value' => $navorder, 'optionname' => 'navorder']);
+	$stmt = $cc->prepare($query);
+	$stmt->execute(['value' => $navorder, 'optionname' => 'navorder', 'moduleid' => $ccpage->module->id]);
 	
 	//rebuild the module so options are updated
 	$ccpage = new CC_Page("$_SERVER[REQUEST_URI]","admin");
