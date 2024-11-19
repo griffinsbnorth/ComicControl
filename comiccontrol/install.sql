@@ -30,7 +30,7 @@ CREATE TABLE `cc_temp_blogs_tags` (
 CREATE TABLE `cc_temp_comics` (
   `id` int(8) NOT NULL,
   `comic` int(12) NOT NULL,
-  `comichighres` varchar(256) NOT NULL,
+  `comicstatic` varchar(256) NOT NULL,
   `comicthumb` varchar(256) NOT NULL,
   `imgname` varchar(256) NOT NULL,
   `publishtime` int(16) NOT NULL,
@@ -46,7 +46,17 @@ CREATE TABLE `cc_temp_comics` (
   `height` int(8) NOT NULL,
   `mime` varchar(128) NOT NULL,
   `contentwarning` text,
-  `altnext` varchar(256) DEFAULT NULL
+  `altnext` varchar(256) DEFAULT NULL,
+  `isanimated` tinyint(1) NOT NULL DEFAULT 0 
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `cc_temp_comics_extra` (
+  `id` int(12) NOT NULL,
+  `comic` varchar(256) NOT NULL,
+  `comicid` int(12) NOT NULL,
+  `imgname` varchar(256) NOT NULL,
+  `mime` varchar(128) NOT NULL,
+  `eorder` int(8) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `cc_temp_comics_storyline` (
@@ -170,6 +180,9 @@ ALTER TABLE `cc_temp_blogs_tags`
 ALTER TABLE `cc_temp_comics`
   ADD PRIMARY KEY (`id`);
 
+ALTER TABLE `cc_temp_comics_extra`
+  ADD PRIMARY KEY (`id`);
+
 ALTER TABLE `cc_temp_comics_storyline`
   ADD PRIMARY KEY (`id`);
 
@@ -220,6 +233,8 @@ ALTER TABLE `cc_temp_blogs`
 ALTER TABLE `cc_temp_blogs_tags`
   MODIFY `id` int(12) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `cc_temp_comics`
+  MODIFY `id` int(8) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `cc_temp_comics_extra`
   MODIFY `id` int(8) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `cc_temp_comics_storyline`
   MODIFY `id` int(8) NOT NULL AUTO_INCREMENT;
