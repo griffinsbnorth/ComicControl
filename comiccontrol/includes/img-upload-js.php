@@ -60,7 +60,7 @@ $('.hidefileinput').on('change',function(){
 				$imagearea.append($finalfile);
 				
 				//if a comic, put the high res filename in the form
-				<?php if(getSlug(1) != "users" && getSlug(1) != "image-library"){ ?>$('.filenameholder').append('<input type="hidden" class="finalfile" name="image-highres" value="' + data.highres + '" />'); <?php } ?>
+				<?php if(getSlug(1) != "users" && getSlug(1) != "image-library"){ ?>$('.filenameholder').append('<input type="hidden" class="finalfile" name="image-static" value="' + data.final + '" />'); <?php } ?>
 				
 				//if not an avatar, also put the thumbnail filename in the form as a hidden input
 				<?php if(getSlug(1) != "users"){ ?>$('.filenameholder').append('<input type="hidden" class="finalfile" name="image-thumbnail" value="' + data.thumb + '" />'); <?php } ?>
