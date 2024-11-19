@@ -565,10 +565,17 @@ class CC_Comic extends CC_Module{
 		//get the current comic
 		$comic = $this->getComic();
 		
-		echo '<div id="cc-comicbody">';
-		
 		if($comic['title'] != ""){
-		
+
+			//add button to view static image if needed
+			$isanimated = $comic['isanimated'];
+			if($isanimated != 0) {
+				echo '<div id="comic-tabs" style="max-width:' . $comic['width'] . 'px;"><button id="animatebtn" class="activebtn">ANIMATED</button>';
+				echo '<button id="staticbtn" class="inactivebtn">STATIC</button></div>';			
+			}
+
+			echo '<div id="cc-comicbody" style="max-width:' . $comic['width'] . 'px;">';
+
 			//handle displaying swf comics
 			if($comic['mime'] == "application/x-shockwave-flash"){
 				echo '<div id="cc-comic" style="height:' . $comic['height'] . 'px; width:' . $comic['width'] . 'px; display:inline-block;">';
@@ -580,22 +587,58 @@ class CC_Comic extends CC_Module{
 			else{
 				$tagadd = "";
 				if($ccpage->slugarr[2] == "read-tag") $tagadd = "/read-tag/" . $ccpage->slugarr[3];
-				
+
 				//link to the next page if available
 				if($comic != $this->getSeq("last") && $comic['altnext'] == ""){
 					$nextcomic = $this->getSeq("next");
-					echo '<a href="' . $ccsite->root . $this->slug . '/' . $nextcomic['slug'] . $tagadd . '">';
+					echo '<a id="comic-link" href="' . $ccsite->root . $this->slug . '/' . $nextcomic['slug'] . $tagadd . '">';
 				}
 				
 				//if there's an alternative link given, link to that
 				else if($comic['altnext'] != ""){
-					echo '<a href="' . $comic['altnext'] . '">';
+					echo '<a id="comic-link" href="' . $comic['altnext'] . '">';
 				}
 				
 				//output the comic image and close the link
 				$hovertext = $comic['hovertext'];
 				if($hovertext == "") $hovertext = $comic['title'];
 				echo '<img title="' . str_replace('"','&quot;',$hovertext) . '" src="' . $ccsite->root . 'comics/' . $comic['imgname'] . '" id="cc-comic" />';
+				$extraPageClass = "comic-stacked";
+				if($isanimated != 0) $extraPageClass = "comic-overlay";
+				$extraPages = $this->getExtraComicImages($comic['comic'],$comic['id']);
+				foreach($extraPages as $extraPage){
+					echo '<img src="' . $ccsite->root . 'comicsextra/' . $extraPage['imgname'] . '" class="' . $extraPageClass . '" />';
+				}
+				//add static page
+				if ($isanimated != 0) {
+					echo '<img id="staticimg" src="' . $ccsite->root . 'comicsstatic/' . $comic['comicstatic']. '" class="hiddenimg" />';
+					//add swap to static functionality
+					?>
+					<script>
+						$('#staticbtn').click(function(){
+							var els = document.querySelectorAll('.comic-overlay'),i;
+
+							for (i = 0; i < els.length; i++) {
+								els[i].className = 'hiddenimg';
+							}
+							$('#staticimg').attr('class', 'comic-overlay');
+							$(this).attr('class', 'activebtn');
+							$('#animatebtn').attr('class', 'inactivebtn');
+						});
+						$('#animatebtn').click(function(){
+							var els = document.querySelectorAll('.hiddenimg'),i;
+
+							for (i = 0; i < els.length; i++) {
+								els[i].className = 'comic-overlay';
+							}
+							$('#staticimg').attr('class', 'hiddenimg');
+							$('#staticbtn').attr('class', 'inactivebtn');
+							$(this).attr('class', 'activebtn');
+						});
+					</script>
+					<?php
+				}
+
 				if($comic != $this->getSeq("last") || $comic['altnext'] != ""){
 					echo '</a>';
 				}
@@ -625,7 +668,7 @@ class CC_Comic extends CC_Module{
 				$isfullscreen = false;
 				if($this->options['clickaction'] == "fullscreen") $isfullscreen = true;
 				if($this->options['clickaction'] == "fullscreenbig" && $comic['width'] > $this->options['comicwidth']) $isfullscreen = true;
-				
+				/*
 				//if option is set to display full size when comic is clicked, put comic in lightbox context
 				if($isfullscreen){
 					?>
@@ -634,7 +677,7 @@ class CC_Comic extends CC_Module{
 							var htmlheight = $('html').css('height');
 							var bodyheight = $('body').css('height');
 							
-							$('body').append('<div class="cc-fullscreen-overlay"><img src="<?=$ccsite->root . "comicshighres/" . $comic['comichighres']?>" /></div>');
+							$('body').append('<div class="cc-fullscreen-overlay"><img src="<?=$ccsite->root . "comicsstatic/" . $comic['comicstatic']?>" /></div>');
 								
 							$('#cc-comicbody').on('click',function(e){
 								e.preventDefault();
@@ -652,7 +695,7 @@ class CC_Comic extends CC_Module{
 						</script>
 							
 					<?php
-				}
+				}*/
 			
 				//display hovertext div for mobile if that option is set
 				if($this->options['touchaction'] == "hovertext" && trim($comic['hovertext']) != "" && !$isfullscreen && $comic['altnext'] == ""){
@@ -748,11 +791,27 @@ class CC_Comic extends CC_Module{
 		}
 		//if current comic wasn't found, deliver error message
 		else{
+			echo '<div id="cc-comicbody">';
 			echo '<div class="cc-errormsg">' . $user_lang['There is no comic with this ID.'] . '</div>';	
 		}
 		
 		echo '</div>';
-		
+		//comic title
+		echo '<p id="comic-page-title">' . $comic['title'] . '</p>';
+	}
+
+	//CUSTOM: Get extra pages for COMIC
+	public function getExtraComicImages($comic,$comicid){
+		global $cc;
+		global $tableprefix;
+
+		$extraPages = array();
+		$query = "SELECT * FROM cc_" . $tableprefix . "comics_extra WHERE comic=:comic AND comicid=:comicid ORDER BY eorder";
+		$stmt = $cc->prepare($query);
+		$stmt->execute(['comic' => $comic, 'comicid' => $comicid]);
+		$extraPages = $stmt->fetchAll();
+
+		return $extraPages;
 	}
 	
 	//get specific comic based on a slug
@@ -1262,7 +1321,6 @@ class CC_Comic extends CC_Module{
 					}
 				
 					//display the chapter name
-					$stmt->execute(['storyline' => $arr['id']]);
 					$pages = $stmt->fetchAll();
 					echo '<div class="cc-storyline-text"><div class="cc-storyline-header"><a href="' . $ccsite->root . $this->slug . '/' . $firstpage['slug'] . '">' . 
 					$arr['name'] . '</a></div>';
