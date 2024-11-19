@@ -49,14 +49,16 @@ else{
 		//set values for the query 
 		$comic = $ccpage->module->id;
 		if(isset($_POST['image-finalfile']) && $_POST['image-finalfile'] != ""){
-			$comichighres = $_POST['image-highres'];
-			$comicthumb = $_POST['image-thumbnail'];
 			$imgname = $_POST['image-finalfile'];
 		}else{
-			$comichighres = $thiscomic['comichighres'];
-			$comicthumb = $thiscomic['comicthumb'];
 			$imgname = $thiscomic['imgname'];
 		}
+		if(isset($_POST['image-thumbfile']) && $_POST['image-thumbfile'] != ""){
+			$comicthumb = $_POST['image-thumbfile'];
+		}else{
+			$comicthumb = $thiscomic['comicthumb'];
+		}
+		$comicstatic = $thiscomic['comicstatic'];
 		$timestring = $_POST['comic-date'] . ' ' . sprintf('%02d',$_POST['hour']) . ':' . sprintf('%02d',$_POST['minute']) . ':' . sprintf('%02d',$_POST['second']);
 		$publishtime = strtotime($timestring);
 		$title = $_POST['comic-title'];
@@ -65,18 +67,48 @@ else{
 		$transcript = $_POST['comic-transcript'];
 		$storyline = $_POST['comic-storyline'];
 		$hovertext = $_POST['comic-hovertext'];
-		$imginfo = getimagesize('../comicshighres/' . $comichighres);
+		$imginfo = getimagesize('../comics/' . $imgname);
 		$width = $imginfo[0];
 		$height = $imginfo[1];
 		$mime = $imginfo['mime'];
 		$contentwarning = $_POST['comic-content-warning'];
 		$altnext = $_POST['comic-alternative-link'];
 		$slugfinal = $thiscomic['slug'];
-		
+		$isanimated = $thiscomic['isanimated'];
+		$newisanimated = 0;
+		if(strcmp($_POST['isanimated'],'on') == 0) {
+			$newisanimated = 1;
+			if (isset($_POST['image-staticfile']) && $_POST['image-staticfile'] != "") {
+							$comicstatic = $_POST['image-staticfile'];
+			}
+		}
+		//did the animate property change
+		if ($isanimated != $newisanimated) {
+			$isanimated = $newisanimated;
+			//if new val is Yes
+			if($isanimated == 1) {
+				$comicstatic = $_POST['image-staticfile'];
+			}else {
+				$comicstatic = $imgname;
+			}
+		}
+
+		//Extra pages
+		$extra1 = $_POST['image-extra1file'];
+		$extraimginfo = getimagesize('../comicsextra/' . $extra1);
+		$extra1mime = $extraimginfo['mime'];
+		$extra2 = $_POST['image-extra2file'];
+		$extraimginfo = getimagesize('../comicsextra/' . $extra2);
+		$extra2mime = $extraimginfo['mime'];
+		$extra3 = $_POST['image-extra3file'];
+		$extraimginfo = getimagesize('../comicsextra/' . $extra3);
+		$extra3mime = $extraimginfo['mime'];
+
+
 		//execute query
-		$query = "UPDATE cc_" . $tableprefix . "comics SET comic=:comic,comichighres=:comichighres,comicthumb=:comicthumb,imgname=:imgname,publishtime=:publishtime,title=:title,newstitle=:newstitle,newscontent=:newscontent,transcript=:transcript,storyline=:storyline,hovertext=:hovertext,width=:width,height=:height,mime=:mime,contentwarning=:contentwarning,altnext=:altnext WHERE id=:id";
+		$query = "UPDATE cc_" . $tableprefix . "comics SET comic=:comic,comicstatic=:comicstatic,comicthumb=:comicthumb,imgname=:imgname,publishtime=:publishtime,title=:title,newstitle=:newstitle,newscontent=:newscontent,transcript=:transcript,storyline=:storyline,hovertext=:hovertext,width=:width,height=:height,mime=:mime,contentwarning=:contentwarning,altnext=:altnext,isanimated=:isanimated WHERE id=:id";
 		$stmt = $cc->prepare($query);
-		$stmt->execute(['comic' => $comic, 'comichighres' => $comichighres, 'comicthumb' => $comicthumb, 'imgname' => $imgname, 'publishtime' => $publishtime, 'title' => $title, 'newstitle' => $newstitle, 'newscontent' => $newscontent, 'transcript' => $transcript, 'storyline' => $storyline, 'hovertext' => $hovertext, 'width' => $width, 'height' => $height, 'mime' => $mime, 'contentwarning' => $contentwarning, 'altnext' => $altnext, 'id' => $thiscomic['id']]);
+		$stmt->execute(['comic' => $comic, 'comicstatic' => $comicstatic, 'comicthumb' => $comicthumb, 'imgname' => $imgname, 'publishtime' => $publishtime, 'title' => $title, 'newstitle' => $newstitle, 'newscontent' => $newscontent, 'transcript' => $transcript, 'storyline' => $storyline, 'hovertext' => $hovertext, 'width' => $width, 'height' => $height, 'mime' => $mime, 'contentwarning' => $contentwarning, 'altnext' => $altnext, 'isanimated' => $isanimated, 'id' => $thiscomic['id']]);
 		
 		//continue if post successfully edited
 		if($stmt->rowCount() > 0){
@@ -94,7 +126,53 @@ else{
 					$stmt->execute(['moduleid' => $comic, 'postid' => $thiscomic['id'], 'tag' => $tag, 'publishtime' => $publishtime]);
 				}
 			}
-			
+
+			//add/update the extra pages if needed
+			$eorder = 1;
+			$extraid = 0;
+			if ($extra1 != "") {
+				if($extraPages[$eorder] != "") {
+					//update page
+					$extraid = $extraPageArr[0]['id'];
+					$query = "UPDATE cc_" . $tableprefix . "comics_extra SET comic=:comic,comicid=:comicid,imgname=:imgname,mime=:mime,eorder=:eorder WHERE id=:id";
+					$stmt = $cc->prepare($query);
+					$stmt->execute(['comic' => $comic, 'comicid' => $thiscomic['id'], 'imgname' => $extra1, 'mime' => $extra1mime, 'eorder' => $eorder, 'id' => $extraid]);
+				}else{
+					//add page
+					$stmt = $cc->prepare("INSERT INTO cc_" . $tableprefix . "comics_extra(comic,comicid,imgname,mime,eorder) VALUES(:moduleid,:postid,:extra,:extramime,:eorder)");
+					$stmt->execute(['moduleid' => $comic, 'postid' => $thiscomic['id'], 'extra' => $extra1, 'extramime' => $extra1mime, 'eorder' => $eorder]);
+				}
+			}
+			if ($extra2 != "") {
+				$eorder = 2;
+				if($extraPages[$eorder] != "") {
+					//update page
+					$extraid = $extraPageArr[1]['id'];
+					$query = "UPDATE cc_" . $tableprefix . "comics_extra SET comic=:comic,comicid=:comicid,imgname=:imgname,mime=:mime,eorder=:eorder WHERE id=:id";
+					$stmt = $cc->prepare($query);
+					$stmt->execute(['comic' => $comic, 'comicid' => $thiscomic['id'], 'imgname' => $extra1, 'mime' => $extra1mime, 'eorder' => $eorder, 'id' => $extraid]);
+				}else{
+					//add page
+					$stmt = $cc->prepare("INSERT INTO cc_" . $tableprefix . "comics_extra(comic,comicid,imgname,mime,eorder) VALUES(:moduleid,:postid,:extra,:extramime,:eorder)");
+					$stmt->execute(['moduleid' => $comic, 'postid' => $thiscomic['id'], 'extra' => $extra2, 'extramime' => $extra2mime, 'eorder' => $eorder]);
+				}
+			}
+			if ($extra3 != "") {
+				$eorder = 3;
+				if($extraPages[$eorder] != "") {
+					//update page
+					$extraid = $extraPageArr[2]['id'];
+					$query = "UPDATE cc_" . $tableprefix . "comics_extra SET comic=:comic,comicid=:comicid,imgname=:imgname,mime=:mime,eorder=:eorder WHERE id=:id";
+					$stmt = $cc->prepare($query);
+					$stmt->execute(['comic' => $comic, 'comicid' => $thiscomic['id'], 'imgname' => $extra1, 'mime' => $extra1mime, 'eorder' => $eorder, 'id' => $extraid]);
+				}else{
+					//add page
+					$stmt = $cc->prepare("INSERT INTO cc_" . $tableprefix . "comics_extra(comic,comicid,imgname,mime,eorder) VALUES(:moduleid,:postid,:extra,:extramime,:eorder)");
+					$stmt->execute(['moduleid' => $comic, 'postid' => $thiscomic['id'], 'extra' => $extra3, 'extramime' => $extra3mime, 'eorder' => $eorder]);
+				}
+			}
+
+
 			?>
 			<div class="msg success f-c"><?=str_replace('%s',$title,$lang['%s has been successfully edited.'])?></div>
 			<?php		
@@ -146,6 +224,7 @@ else{
 			<?php // comic uploader area ?>
 			<div class="currentfileholder"><button class="full-width dark-bg toggle-current-file"><span class="current-file-text"><?=$lang['View current file']?></span> <i class="fa fa-angle-down"></i></button>
 				<div class="currentfile"><img src="<?=$ccsite->root . 'comics/' . $thiscomic['imgname']?>" /></div>
+				<span class="currentfinalfile"><?=$thiscomic['imgname']?></span>
 			</div>
 			<?php buildImageInput($lang['Change file...'],false); ?>
 				
@@ -155,6 +234,18 @@ else{
 				<?php
 					//build array of form info
 					$forminputs = array();
+					$currentIsAnimated = 'off';
+					$firstOptionAnimated = 'off';
+					$secondOptionAnimated = 'on';
+					$firstOptionAnimVal = $lang['No'];
+					$secondOptionAnimVal = $lang['Yes'];
+					if($thiscomic['isanimated'] == 1) {
+						$currentIsAnimated = 'on';
+						$firstOptionAnimated = 'on';
+						$secondOptionAnimated = 'off';
+						$firstOptionAnimVal = $lang['Yes'];
+						$secondOptionAnimVal = $lang['No'];
+					}
 					array_push($forminputs,
 						array(
 							array(
@@ -208,6 +299,18 @@ else{
 								'regex' => "storyline",
 								'current' => $thiscomic['storyline']
 							)
+						),array(
+							array(
+								'type' => "select",
+								'label' => $lang['Is animated'],
+								'tooltip' => $lang['tooltip-isanimated'],
+								'name' => 'isanimated',
+								'options' => array(
+									$firstOptionAnimated => $firstOptionAnimVal,
+									$secondOptionAnimated => $secondOptionAnimVal,
+								),
+								'current' => $currentIsAnimated
+							)
 						)
 					);
 					if(getModuleOption('contentwarnings') == "on") array_push($forminputs,
@@ -227,7 +330,30 @@ else{
 					buildForm($forminputs) 
 				?>
 			</div>
-			
+			<span class="currentthumbfile"><?=$thiscomic['comicthumb']?></span>
+			<?php buildThumbnailFileInput(false); ?>
+
+			<span id="currentisanimated" style="visibility:hidden;"><?=$thiscomic['isanimated']?></span>
+			<span class="currentstaticfile"><?=$thiscomic['comicstatic']?></span>
+			<?php buildCustomFileInput("Static Image (for animated pages)",false,"","static"); ?>
+
+			<?php 
+				//get current extra pages 
+				$stmt = $cc->prepare("SELECT * FROM cc_" . $tableprefix . "comics_extra WHERE comic=:comic AND comicid=:comicid ORDER BY eorder");
+				$stmt->execute(['comic' => $thiscomic['comic'],'comicid' => $thiscomic['id']]);
+				$extraPageArr = $stmt->fetchAll();
+				$extraPages = array(1 => "", 2 => "", 3 => "");
+				foreach($extraPageArr as $extraPage){
+					echo '<span class="currentextra' . $extraPage['eorder'] . 'file">EXTRA' . $extraPage['eorder'] . ' = ' . $extraPage['imgname'] . '</span><br>';
+					$extraPages[$extraPage['eorder']] = $extraPage['imgname'];
+				}
+			?>
+
+			<?php buildCustomFileInput("Extra Comic Page/Overlay 1",false,"","extra1"); ?>
+			<?php buildCustomFileInput("Extra Comic Page/Overlay 2",false,"","extra2"); ?>
+			<?php buildCustomFileInput("Extra Comic Page/Overlay 3",false,"","extra3"); ?>
+
+
 			<?php //build the news post form ?>
 			<h2 class="formheader">News post</h2>
 			<div class="formcontain">
@@ -287,6 +413,16 @@ else{
 			});
 			$(this).find('i').toggleClass('fa-angle-down fa-angle-up');
 		});
+		$('#isanimated').on('change',function() {
+			if($('#currentisanimated').text() == '0') {
+				if($(this).val() == 'on') {
+					$('#staticfile').attr('data-validate', 'custom-file-upload');
+				} else {
+					$('#staticfile').removeAttr('data-validate');
+				}
+			}
+		});
+
 		</script>
 		<?php 
 		//include relevant javascript
@@ -294,6 +430,8 @@ else{
 		include('includes/form-submit-js.php');
 		include('includes/img-upload-js.php');
 		include('includes/content-editor-js.php');
+		include('includes/img-custom-upload-js.php');
+
 	}
 }
 ?>

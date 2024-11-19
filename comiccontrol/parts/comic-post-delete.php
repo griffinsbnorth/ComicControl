@@ -38,10 +38,12 @@ else{
 	//delete the post if they confirmed deletion
 	if(getSlug(5) == "confirmed"){
 		
-		//delete post and tags
+		//delete post and tags and extra pages
 		$stmt = $cc->prepare("DELETE FROM cc_" . $tableprefix . "comics WHERE id=:id");
 		$stmt->execute(['id' => $thiscomic['id']]);
 		$stmt = $cc->prepare("DELETE FROM cc_" . $tableprefix . "comics_tags WHERE comicid=:id");
+		$stmt->execute(['id' => $thiscomic['id']]);
+		$stmt = $cc->prepare("DELETE FROM cc_" . $tableprefix . "comics_extra WHERE comicid=:id");
 		$stmt->execute(['id' => $thiscomic['id']]);
 		
 		//output success message
