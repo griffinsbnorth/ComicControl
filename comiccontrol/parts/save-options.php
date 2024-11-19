@@ -13,10 +13,11 @@ $stmt = $cc->prepare($query);
 $stmt->execute(['moduleid' => $ccpage->module->id]);
 $options = $stmt->fetchAll();
 $query = "UPDATE cc_" . $tableprefix . "modules_options SET value=:value WHERE optionname=:optionname AND moduleid=:moduleid";
-$stmt = $cc->prepare($query);
+
 
 foreach($options as $option){
 	if(array_key_exists($option['optionname'],$_POST)){
+		$stmt = $cc->prepare($query);
 		$stmt->execute(['value' => $_POST[$option['optionname']], 'optionname' => $option['optionname'], 'moduleid' => $ccpage->module->id]);
 	}
 }
